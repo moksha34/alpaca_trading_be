@@ -5,37 +5,55 @@ import env.secrets
 from twelvedata import TDClient
 # Initialize client - apikey parameter is requiered
 td = TDClient(apikey=os.environ.get("twelve-data-api"))
+from talib import abstract
+import yfinance as yf
+import pandas as pd
+import numpy as np
 
 
 
-def get_stock_ts(stk,interval="1day",output=100,timezone="America/New_York"):
-    ts = td.time_series(
-    symbol=stk,
-    interval=interval,
-    outputsize=output,
-    timezone=timezone,
-    )
-    pd=ts.as_pandas()
-    return ts
+##  get stock data as dataframe ######
+
+def get_stock_df(stk,interval,start,end):
+    df=None
+    try:
+        ts = td.time_series(symbol=stk,
+        interval=interval,
+        start_date=start,
+        end_date=end,
+        outputsize=1000,
+        order="ASC"
+        )
+        df=ts.as_pandas()
+        
+       
+        
+    except Exception as e:
+        df=yf.download(tickers=stk,interval=interval[:2],start=start,end=end)
+        df.index.rename("datetime",inplace=True)
+        df.rename(columns={"Open": "open","Close": "close","Low": "low","High": "high","volume": "volume"},inplace=True)
+       
+      
+    return df    
+
+        
+def get_sma_col(df,lookback_period):
+    sma=abstract.Function("sma")
+    return sma(df,timeperiod=lookback_period)
+
+def get_rsi_col(df,lookback_period):
+    rsi=abstract.Function("RSI")
+    return rsi(df,timeperiod=lookback_period)
+
+def get_macd_cols(df,fastperiod=12, slowperiod=26, signalperiod=9):
+    macd=abstract.Function("MACD")
+    return macd(df,fastperiod=fastperiod, slowperiod=slowperiod, signalperiod=signalperiod)
 
 
 
-def get_stock_with_vwap(ts):
-    df=ts.with_vwap().as_pandas()
-    return df["vwap"]
+# df=get_stock_df("AAPL",'1day',"2020-1-1","2020-3-1")
 
-
-def add_rsi(ts,time_period=10):
-    df=ts.with_rsi(time_period=time_period).as_pandas()
-    df.rename(columns={"rsi": f"rsi{time_period}"},inplace=True)
-    return df[f"rsi{time_period}"]
-
-
-
-def get_stock_with_triple_sma(ts,short_period=20,medium_period=100,long_period=200):
-    df=ts.with_sma(time_period=short_period).with_sma(time_period=medium_period).with_sma(time_period=long_period).as_pandas()
-    df.rename(columns={"sma1": f"sma{short_period}","sma2": f"sma{medium_period}","sma3": f"sma{long_period}"},inplace=True)
-    print(df.head())
-    return df[[f"sma{short_period}",f"sma{medium_period}",f"sma{long_period}"]]
+# df[["macd","macd_signal","macdhist"]]=get_macd_cols(df)
     
-    
+# print(df.tail())    
+

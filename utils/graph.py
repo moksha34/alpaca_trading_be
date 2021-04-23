@@ -24,21 +24,18 @@ def add_sma_graph(fig,df,column="sma",color="blue",row=1,col=1):
     return fig    
 
 
-
-fig=make_subplots(rows=2,cols=1,row_heights=[0.7,0.3])
-data_ts=td.get_stock_ts("tsla")
-df=data_ts.as_pandas()
-df=pd.concat([df,td.get_stock_with_triple_sma(data_ts),td.add_rsi(data_ts)],axis=1)
-
-
-add_cdl_graph(fig,df,row=1,col=1)
-add_rsi_graph(fig,df,column="rsi10",row=2,col=1)
-add_sma_graph(fig,df,column="sma20",color="green",row=1,col=1)
-add_sma_graph(fig,df,column="sma100",color="purple",row=1,col=1)
-add_sma_graph(fig,df,column="sma200",color="red",row=1,col=1)
+def generate_chart():
+    fig=make_subplots(rows=2,cols=1,row_heights=[0.7,0.3])
+    df=td.get_stock_df("tsla","1day","2020-1-1","2021-1-1")
+    df["sma20"]=td.get_sma_col(df,20)
+    df["rsi10"]=td.get_rsi_col(df,10)
+    add_cdl_graph(fig,df,row=1,col=1)
+    add_rsi_graph(fig,df,column="rsi10",row=2,col=1)
+    add_sma_graph(fig,df,column="sma20",color="green",row=1,col=1)
+    return fig
 
 
-pyo.plot(fig)
+
 
 
 
